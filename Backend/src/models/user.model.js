@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 
-const userScheam = new mongoose.Schema(
+const userSchema = new mongoose.Schema(
   {
     username: {
       type: String,
@@ -26,7 +26,7 @@ const userScheam = new mongoose.Schema(
       index: true,
     },
     avatar: {
-      type: String, // cloudinary ka url
+      type: String, // Cloudinary URL
       required: true,
     },
     coverImage: {
@@ -40,7 +40,7 @@ const userScheam = new mongoose.Schema(
     ],
     password: {
       type: String,
-      required: [true, "Password is Required "],
+      required: [true, "Password is required"],
     },
     refreshToken: {
       type: String,
@@ -49,19 +49,19 @@ const userScheam = new mongoose.Schema(
   { timestamps: true }
 );
 
-userScheam.pre("save", async function (next) {
+userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
 
-  this.password = bcrypt.hash(this.password, 10);
+  this.password = await bcrypt.hash(this.password, 10); 
   next();
 });
 
-userScheam.methods.ispasswordCorrect = async function (password) {
+userSchema.methods.isPasswordCorrect = async function (password) {
   return await bcrypt.compare(password, this.password);
 };
 
-userScheam.methods.generateAccessToken = function () {
-  jwt.sign(
+userSchema.methods.generateAccessToken = function () {
+  return jwt.sign(
     {
       _id: this._id,
       email: this.email,
@@ -70,20 +70,21 @@ userScheam.methods.generateAccessToken = function () {
     },
     process.env.ACCESS_TOKEN_SECRET,
     {
-      expiresIn: process.env.ACCESS_TOKEN_EXPIRY,
+      expiresIn: process.env.ACCESS_TOKEN_EXPIRY || "15m",
     }
   );
 };
 
-userScheam.methods.refreshAccessToken = function () {
-  jwt.sign(
+userSchema.methods.generateRefreshToken = function () {
+  return jwt.sign(
     {
       _id: this._id,
     },
     process.env.REFRESH_TOKEN_SECRET,
     {
-      expiresIn: process.env.REFRESH_TOKEN_EXPIRY,
+      expiresIn: process.env.REFRESH_TOKEN_EXPIRY || "7d",
     }
   );
 };
-export const User = mongoose.model("User", userScheam);
+
+export const User = mongoose.model("User", userSchema);
