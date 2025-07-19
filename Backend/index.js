@@ -10,7 +10,17 @@ const app =  express();
 
 
 
-connectDB();
+connectDB()
+.then(() =>{
+
+    app.listen(() =>{
+        console.log(`Server is running at the PORT ${process.env.PORT}`)
+    })
+
+})
+.catch((error) =>{
+    console.log("MongoDB connection Failed " , error)
+})
 
 
 
