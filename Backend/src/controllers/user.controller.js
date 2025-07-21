@@ -223,7 +223,9 @@ export const changeCurrentPassword = asyncHandler(async (req, res) => {
 export const getCurrentUser = asyncHandler(async (req, res) => {
   return res
     .status(200)
-    .json(new ApiResponse(200, req.user, "Current User Fetched Successfully ! "));
+    .json(
+      new ApiResponse(200, req.user, "Current User Fetched Successfully ! ")
+    );
 });
 
 export const updateAccountDetails = asyncHandler(async (req, res) => {
@@ -385,6 +387,10 @@ export const getUserChannelProfile = asyncHandler(async (req, res) => {
 });
 
 export const getWatchHistory = asyncHandler(async (req, res) => {
+  if (!req.user?._id) {
+    throw new ApiError(401, "Unauthorized");
+  }
+
   const user = await User.aggregate([
     {
       $match: {
@@ -416,23 +422,26 @@ export const getWatchHistory = asyncHandler(async (req, res) => {
             },
           },
           {
-             $addFields :{
-              owner : {
-                $first : "$owner"
-              }
-             }
-          }
+            $addFields: {
+              owner: { $first: "$owner" },
+            },
+          },
         ],
       },
     },
   ]);
 
-   return res
-   .status(200)
-   .json(
-    new ApiResponse (200 , 
-      user[0].watchHistory,
-      "Watch History Fetched Successfully "
-    )
-   )
+  if (!user.length) {
+    throw new ApiError(404, "User not found");
+  }
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        user[0].watchHistory,
+        "Watch History Fetched Successfully"
+      )
+    );
 });
